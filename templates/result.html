@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Results</h2>
+    <table>
+        <tr>
+            <th>Device IP</th>
+            <th>Hostname</th>
+            <th>Vendor/Model</th>
+            <th>Keyword(s)</th>
+            <th>Case Sensitive</th>
+            <th>Configuration Lines</th>
+        </tr>
+        {% for key, value in data.items() %}
+        <tr>
+            <td>{{ key }}</td>
+            {% for item in value %}
+                <td style="white-space: pre-wrap;">{{ item }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="/">Go Back</a>
+</body>
+</html>

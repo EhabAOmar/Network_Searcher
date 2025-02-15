@@ -97,12 +97,17 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
 
     i = 0
     for device_info in group:
-        driver = get_network_driver(vendor_list[i])
-        device = driver(**device_info)
 
         # For Juniper devices, default device type is Juniper
-        if vendor_list[i] == ("junos" or "juniper" or ""):
+        if vendor_list[i].lower() in ["junos","juniper",""]:
+            # Need to configure the following on Juniper router to enable netconf
+            ## configure
+            ## set system services netconf ssh
+            ## commit
             try:
+                driver = get_network_driver("junos")
+                device = driver(**device_info)
+
                 device.open()
 
                 facts = device.get_facts()  # Retrieve device facts
@@ -147,6 +152,112 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 if matching_lines!=[]:
                     data_queue.put([device_IP, hostname,"Juniper / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
                 # print(f" queue size: {data_queue.qsize()}")
+            except Exception as e:
+                print(f"exception: {e}")
+
+        elif vendor_list[i].lower() in ["cisco","cisco xe","ios xe"]:
+            try:
+                driver = get_network_driver("ios")
+                device = driver(**device_info)
+                device.open()
+
+                facts = device.get_facts()  # Retrieve device facts
+
+                # Device IP address
+                device_IP = device_info['hostname']
+
+                # Device name or hostname
+                hostname = facts['hostname']
+
+                device_model = facts['model']
+                # Get the configuration with "display set" format for juniper devices
+                config = device.get_config(retrieve="running")['running']
+
+                # If searching by non-case-sensitive keyword; then lower all chars in both keyword and configuration lines and find match
+                if case_sensitive is False:
+                    keyword1 = keyword1.lower()
+                    matching_lines = [line for line in config.splitlines() if keyword1 in line.lower()]
+                else:
+                    matching_lines = [line for line in config.splitlines() if keyword1 in line]
+
+                if operator == "OR":
+                    if case_sensitive is False:
+                        keyword2 = keyword2.lower()
+                        matching_lines_k2 = [line for line in config.splitlines() if keyword2 in line.lower()]
+                    else:
+                        matching_lines_k2 = [line for line in config.splitlines() if keyword2 in line]
+                    matching_lines = matching_lines + matching_lines_k2
+
+                elif operator == "AND":
+                    if case_sensitive is False:
+                        keyword2 = keyword2.lower()
+                        matching_lines_k2 = [line for line in matching_lines if keyword2 in line.lower()]
+                    else:
+                        matching_lines_k2 = [line for line in matching_lines if keyword2 in line]
+                    matching_lines = matching_lines_k2
+
+                # To return the matching lines in string format
+                str_matching_lines = "\n".join(matching_lines)
+
+                # If matching lines are empty, will return None
+                if matching_lines!=[]:
+                    data_queue.put([device_IP, hostname,"Cisco / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
+            except Exception as e:
+                print(f"exception: {e}")
+
+        elif vendor_list[i].lower() in ["cisco xr","ios xr"]:
+            # Need to configure the following on cisco xr router to enable netconf
+            ## configure
+            ## xml agent tty iteration off
+            ## netconf agent ssh
+            ## commit
+
+            try:
+                driver = get_network_driver("iosxr")
+                device = driver(**device_info)
+                device.open()
+
+                facts = device.get_facts()  # Retrieve device facts
+
+                # Device IP address
+                device_IP = device_info['hostname']
+
+                # Device name or hostname
+                hostname = facts['hostname']
+
+                device_model = facts['model']
+                # Get the configuration with "display set" format for juniper devices
+                config = device.get_config(retrieve="running")['running']
+
+                # If searching by non-case-sensitive keyword; then lower all chars in both keyword and configuration lines and find match
+                if case_sensitive is False:
+                    keyword1 = keyword1.lower()
+                    matching_lines = [line for line in config.splitlines() if keyword1 in line.lower()]
+                else:
+                    matching_lines = [line for line in config.splitlines() if keyword1 in line]
+
+                if operator == "OR":
+                    if case_sensitive is False:
+                        keyword2 = keyword2.lower()
+                        matching_lines_k2 = [line for line in config.splitlines() if keyword2 in line.lower()]
+                    else:
+                        matching_lines_k2 = [line for line in config.splitlines() if keyword2 in line]
+                    matching_lines = matching_lines + matching_lines_k2
+
+                elif operator == "AND":
+                    if case_sensitive is False:
+                        keyword2 = keyword2.lower()
+                        matching_lines_k2 = [line for line in matching_lines if keyword2 in line.lower()]
+                    else:
+                        matching_lines_k2 = [line for line in matching_lines if keyword2 in line]
+                    matching_lines = matching_lines_k2
+
+                # To return the matching lines in string format
+                str_matching_lines = "\n".join(matching_lines)
+
+                # If matching lines are empty, will return None
+                if matching_lines!=[]:
+                    data_queue.put([device_IP, hostname,"Cisco / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
             except Exception as e:
                 print(f"exception: {e}")
 

@@ -261,4 +261,56 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
             except Exception as e:
                 print(f"exception: {e}")
 
+        elif vendor_list[i].lower() in ["huawei","huawei vrp","huawei_vrp"]:
+
+            try:
+                driver = get_network_driver("huawei_vrp")
+                device = driver(**device_info)
+                device.open()
+
+                facts = device.get_facts()  # Retrieve device facts
+
+                # Device IP address
+                device_IP = device_info['hostname']
+
+                # Device name or hostname
+                hostname = facts['hostname']
+
+                device_model = facts['model']
+
+                # Get the configuration with "display set" format for juniper devices
+                config = device.get_config(retrieve="running")['running']
+
+                # If searching by non-case-sensitive keyword; then lower all chars in both keyword and configuration lines and find match
+                if case_sensitive is False:
+                    keyword1 = keyword1.lower()
+                    matching_lines = [line for line in config.splitlines() if keyword1 in line.lower()]
+                else:
+                    matching_lines = [line for line in config.splitlines() if keyword1 in line]
+
+                if operator == "OR":
+                    if case_sensitive is False:
+                        keyword2 = keyword2.lower()
+                        matching_lines_k2 = [line for line in config.splitlines() if keyword2 in line.lower()]
+                    else:
+                        matching_lines_k2 = [line for line in config.splitlines() if keyword2 in line]
+                    matching_lines = matching_lines + matching_lines_k2
+
+                elif operator == "AND":
+                    if case_sensitive is False:
+                        keyword2 = keyword2.lower()
+                        matching_lines_k2 = [line for line in matching_lines if keyword2 in line.lower()]
+                    else:
+                        matching_lines_k2 = [line for line in matching_lines if keyword2 in line]
+                    matching_lines = matching_lines_k2
+
+                # To return the matching lines in string format
+                str_matching_lines = "\n".join(matching_lines)
+
+                # If matching lines are empty, will return None
+                if matching_lines!=[]:
+                    data_queue.put([device_IP, hostname,"Huawei / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
+            except Exception as e:
+                print(f"exception: {e}")
+
         i = +1

@@ -6,12 +6,12 @@ A tool developed using FastAPI framework to search a network of routers/switches
 
 The input file must be a .CSV file, with the IP address and router vendor (Juniper, Cisco, Huawei, ... etc)
 
-This tool is useful when we have a big network with a lot of routers/switches and need to find the configuration for a particular service or customer on which routers.
+This tool is useful when we have a big network with a lot of routers/switches and need to find the configuration for a particular service or custom configurations on which nodes.
 
 
 ## Features
 - Search with one keyword or two keywords with options (AND) or (OR)
-- Search with a case-sensitive kewywords
+- Search with a case-sensitive keywords
 - Returning the list of configuration lines matching the keywords
 
 

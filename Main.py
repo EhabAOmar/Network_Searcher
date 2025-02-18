@@ -28,10 +28,6 @@ async def show_form(request: Request):
 UPLOAD_DIR = "uploads"  # Directory to store uploaded files
 os.makedirs(UPLOAD_DIR, exist_ok=True)  # Create folder if it doesn't exist
 
-def progress_bar():
-    for i in range(1, 2):
-        time.sleep(1)  # Simulate progress update every second
-
 
 @app.post("/submit/")
 async def process_form(
@@ -64,8 +60,6 @@ async def process_form(
     # Searching the devices for the keyword(s)
     data = search_network(username,password,keyword1,keyword2,operator,case_sensitive,devices)
 
-    # Show progress bar "future feature"
-    progress_bar()
 
     # Store data in session (or use query parameters)
     return templates.TemplateResponse("result.html", {"request": request, "data": data,"keyword1": keyword1 ,"keyword2": keyword2 ,"operator": operator, "case_sensitive": case_sensitive})

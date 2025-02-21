@@ -40,48 +40,46 @@ def search_network(username,password,keyword1,keyword2,operator,case_sensitive,d
 
     device_count = len(devices)
 
-    # If devices number < 10; then we will use one thread only
-    if device_count < 10:
-
-        # Create new Thread
-        thread1 = myThread(1, "Thread-1",keyword1,keyword2,operator,case_sensitive,vendor_list,devices_info)
-
-        # Start new Thread
-        thread1.start()
-
-        # Wait for the Thread to be completed
-        thread1.join()
-
-    # If number of devices >= 10, then use multi-Threads
+    # Dividing the list of devices to groups for Threading
+    if device_count < 5:
+        device_per_thread = 1
     else:
-        # Dividing the list of devices to groups for Threading
         device_per_thread = (device_count//thread_num) + (device_count%thread_num)
-        group1 = devices_info[0:device_per_thread]
-        group2 = devices_info[(device_per_thread):(2*device_per_thread)]
-        group3 = devices_info[(2*device_per_thread):(3*device_per_thread)]
-        group4 = devices_info[(3*device_per_thread):(4*device_per_thread)]
-        group5 = devices_info[(4*device_per_thread):(5*device_per_thread)]
 
-        # Create new Threads
-        thread1 = myThread(1, "Thread-1",keyword1,keyword2,operator,case_sensitive,vendor_list,group1)
-        thread2 = myThread(2, "Thread-2",keyword1,keyword2,operator,case_sensitive,vendor_list,group2)
-        thread3 = myThread(3, "Thread-3",keyword1,keyword2,operator,case_sensitive,vendor_list,group3)
-        thread4 = myThread(4, "Thread-4",keyword1,keyword2,operator,case_sensitive,vendor_list,group4)
-        thread5 = myThread(5, "Thread-5",keyword1,keyword2,operator,case_sensitive,vendor_list,group5)
+    group1 = devices_info[0:device_per_thread]
+    group2 = devices_info[(device_per_thread):(2*device_per_thread)]
+    group3 = devices_info[(2*device_per_thread):(3*device_per_thread)]
+    group4 = devices_info[(3*device_per_thread):(4*device_per_thread)]
+    group5 = devices_info[(4*device_per_thread):(5*device_per_thread)]
 
-        # Start new Threads
-        thread1.start()
-        thread2.start()
-        thread3.start()
-        thread4.start()
-        thread5.start()
+    # Dividing the vendor list of devices for Threading
+    vendor_list1 = vendor_list[0:device_per_thread]
+    vendor_list2 = vendor_list[(device_per_thread):(2*device_per_thread)]
+    vendor_list3 = vendor_list[(2*device_per_thread):(3*device_per_thread)]
+    vendor_list4 = vendor_list[(3*device_per_thread):(4*device_per_thread)]
+    vendor_list5 = vendor_list[(4*device_per_thread):(5*device_per_thread)]
 
-        # Wait for the Threads to be completed
-        thread1.join()
-        thread2.join()
-        thread3.join()
-        thread4.join()
-        thread5.join()
+
+    # Create new Threads
+    thread1 = myThread(1, "Thread-1",keyword1,keyword2,operator,case_sensitive,vendor_list1,group1)
+    thread2 = myThread(2, "Thread-2",keyword1,keyword2,operator,case_sensitive,vendor_list2,group2)
+    thread3 = myThread(3, "Thread-3",keyword1,keyword2,operator,case_sensitive,vendor_list3,group3)
+    thread4 = myThread(4, "Thread-4",keyword1,keyword2,operator,case_sensitive,vendor_list4,group4)
+    thread5 = myThread(5, "Thread-5",keyword1,keyword2,operator,case_sensitive,vendor_list5,group5)
+
+    # Start new Threads
+    thread1.start()
+    thread2.start()
+    thread3.start()
+    thread4.start()
+    thread5.start()
+
+    # Wait for the Threads to be completed
+    thread1.join()
+    thread2.join()
+    thread3.join()
+    thread4.join()
+    thread5.join()
 
 
     # data will be returned in dictionary structure
@@ -150,8 +148,8 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
 
                 # If matching lines are empty, will return None
                 if matching_lines!=[]:
-                    data_queue.put([device_IP, hostname,"Juniper / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
-                # print(f" queue size: {data_queue.qsize()}")
+                    data_queue.put([device_IP, hostname,"Juniper/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
+
             except Exception as e:
                 print(f"exception: {e}")
 
@@ -201,7 +199,7 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
 
                 # If matching lines are empty, will return None
                 if matching_lines!=[]:
-                    data_queue.put([device_IP, hostname,"Cisco / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
+                    data_queue.put([device_IP, hostname,"Cisco/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
             except Exception as e:
                 print(f"exception: {e}")
 
@@ -257,7 +255,7 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
 
                 # If matching lines are empty, will return None
                 if matching_lines!=[]:
-                    data_queue.put([device_IP, hostname,"Cisco / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
+                    data_queue.put([device_IP, hostname,"Cisco/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
             except Exception as e:
                 print(f"exception: {e}")
 
@@ -309,7 +307,7 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
 
                 # If matching lines are empty, will return None
                 if matching_lines!=[]:
-                    data_queue.put([device_IP, hostname,"Huawei / "+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
+                    data_queue.put([device_IP, hostname,"Huawei/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
             except Exception as e:
                 print(f"exception: {e}")
 

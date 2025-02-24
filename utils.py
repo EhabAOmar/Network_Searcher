@@ -3,23 +3,6 @@ from napalm import get_network_driver
 import queue
 
 
-
-class myThread (threading.Thread):
-   def __init__(self, threadID, name,keyword1,keyword2,operator,case_sensitive,vendor_list,group):
-      threading.Thread.__init__(self)
-      self.threadID = threadID
-      self.name = name
-      self.group = group
-      self.keyword1 = keyword1
-      self.keyword2 = keyword2
-      self.operator = operator
-      self.case_sensitive = case_sensitive
-      self.vendor_list = vendor_list
-
-   def run(self):
-      thread_run(self.name, self.keyword1, self.keyword2, self.operator, self.case_sensitive, self.vendor_list, self.group)
-
-
 def search_network(username,password,keyword1,keyword2,operator,case_sensitive,devices):
 
     # Global queue for storing the data for all threads outputs
@@ -61,11 +44,11 @@ def search_network(username,password,keyword1,keyword2,operator,case_sensitive,d
 
 
     # Create new Threads
-    thread1 = myThread(1, "Thread-1",keyword1,keyword2,operator,case_sensitive,vendor_list1,group1)
-    thread2 = myThread(2, "Thread-2",keyword1,keyword2,operator,case_sensitive,vendor_list2,group2)
-    thread3 = myThread(3, "Thread-3",keyword1,keyword2,operator,case_sensitive,vendor_list3,group3)
-    thread4 = myThread(4, "Thread-4",keyword1,keyword2,operator,case_sensitive,vendor_list4,group4)
-    thread5 = myThread(5, "Thread-5",keyword1,keyword2,operator,case_sensitive,vendor_list5,group5)
+    thread1 = threading.Thread(target=thread_run, args=(keyword1,keyword2,operator,case_sensitive,vendor_list1,group1))
+    thread2 = threading.Thread(target=thread_run, args=(keyword1,keyword2,operator,case_sensitive,vendor_list2,group2))
+    thread3 = threading.Thread(target=thread_run, args=(keyword1,keyword2,operator,case_sensitive,vendor_list3,group3))
+    thread4 = threading.Thread(target=thread_run, args=(keyword1,keyword2,operator,case_sensitive,vendor_list4,group4))
+    thread5 = threading.Thread(target=thread_run, args=(keyword1,keyword2,operator,case_sensitive,vendor_list5,group5))
 
     # Start new Threads
     thread1.start()
@@ -91,7 +74,7 @@ def search_network(username,password,keyword1,keyword2,operator,case_sensitive,d
     return data
 
 
-def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,group):
+def thread_run(keyword1,keyword2,operator,case_sensitive,vendor_list,group):
 
     i = 0
     for device_info in group:
@@ -105,10 +88,10 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
             try:
                 driver = get_network_driver("junos")
                 device = driver(**device_info)
-
                 device.open()
 
-                facts = device.get_facts()  # Retrieve device facts
+                # Retrieve device facts
+                facts = device.get_facts()
 
                 # Device IP address
                 device_IP = device_info['hostname']
@@ -116,7 +99,9 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 # Device name or hostname
                 hostname = facts['hostname']
 
+                # Device model
                 device_model = facts['model']
+
                 # Get the configuration with "display set" format for juniper devices
                 config = device.get_config(retrieve="running", format="set")['running']
 
@@ -126,6 +111,10 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                     matching_lines = [line for line in config.splitlines() if keyword1 in line.lower()]
                 else:
                     matching_lines = [line for line in config.splitlines() if keyword1 in line]
+
+                # If keyword2 is none or sequence of spaces, then it is no meaning of operator and put it to none.
+                if keyword2.strip() == "":
+                    operator = ""
 
                 if operator == "OR":
                     if case_sensitive is False:
@@ -146,7 +135,7 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 # To return the matching lines in string format
                 str_matching_lines = "\n".join(matching_lines)
 
-                # If matching lines are empty, will return None
+                # If matching lines are not empty will return matching lines, and if empty, will return None
                 if matching_lines!=[]:
                     data_queue.put([device_IP, hostname,"Juniper/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
 
@@ -159,7 +148,8 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 device = driver(**device_info)
                 device.open()
 
-                facts = device.get_facts()  # Retrieve device facts
+                # Retrieve device facts
+                facts = device.get_facts()
 
                 # Device IP address
                 device_IP = device_info['hostname']
@@ -178,6 +168,10 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 else:
                     matching_lines = [line for line in config.splitlines() if keyword1 in line]
 
+                # If keyword2 is none or sequence of spaces, then it is no meaning of operator and put it to none.
+                if keyword2.strip() == "":
+                    operator = ""
+
                 if operator == "OR":
                     if case_sensitive is False:
                         keyword2 = keyword2.lower()
@@ -197,7 +191,7 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 # To return the matching lines in string format
                 str_matching_lines = "\n".join(matching_lines)
 
-                # If matching lines are empty, will return None
+                # If matching lines are not empty will return matching lines, and if empty, will return None
                 if matching_lines!=[]:
                     data_queue.put([device_IP, hostname,"Cisco/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
             except Exception as e:
@@ -215,7 +209,8 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 device = driver(**device_info)
                 device.open()
 
-                facts = device.get_facts()  # Retrieve device facts
+                # Retrieve device facts
+                facts = device.get_facts()
 
                 # Device IP address
                 device_IP = device_info['hostname']
@@ -223,7 +218,9 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 # Device name or hostname
                 hostname = facts['hostname']
 
+                # Device model
                 device_model = facts['model']
+
                 # Get the configuration with "display set" format for juniper devices
                 config = device.get_config(retrieve="running")['running']
 
@@ -233,6 +230,10 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                     matching_lines = [line for line in config.splitlines() if keyword1 in line.lower()]
                 else:
                     matching_lines = [line for line in config.splitlines() if keyword1 in line]
+
+                # If keyword2 is none or sequence of spaces, then it is no meaning of operator and put it to none.
+                if keyword2.strip() == "":
+                    operator = ""
 
                 if operator == "OR":
                     if case_sensitive is False:
@@ -253,7 +254,7 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                 # To return the matching lines in string format
                 str_matching_lines = "\n".join(matching_lines)
 
-                # If matching lines are empty, will return None
+                # If matching lines are not empty will return matching lines, and if empty, will return None
                 if matching_lines!=[]:
                     data_queue.put([device_IP, hostname,"Cisco/"+device_model, keyword1 +" "+ operator + " " + keyword2,case_sensitive, str_matching_lines])
             except Exception as e:
@@ -285,6 +286,10 @@ def thread_run(threadName,keyword1,keyword2,operator,case_sensitive,vendor_list,
                     matching_lines = [line for line in config.splitlines() if keyword1 in line.lower()]
                 else:
                     matching_lines = [line for line in config.splitlines() if keyword1 in line]
+
+                # If keyword2 is none or sequence of spaces, then it is no meaning of operator and put it to none.
+                if keyword2.strip() == "":
+                    operator = ""
 
                 if operator == "OR":
                     if case_sensitive is False:

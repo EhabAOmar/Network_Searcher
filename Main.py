@@ -1,14 +1,12 @@
-import time
-import shutil
-import os
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request, File, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import FastAPI, File, UploadFile,HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import FileResponse
 from utils import search_network
 import pandas as pd
 from datetime import datetime
+import shutil
+import os
 
 
 app = FastAPI()
@@ -22,7 +20,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 # Route to serve the user form (HTML page)
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def show_form(request: Request):
     return templates.TemplateResponse("form.html", {"request": request})
 
@@ -43,7 +41,7 @@ async def process_form(
 ):
     file_location = os.path.join(UPLOAD_DIR, file.filename)
     if (not file.filename.endswith(".csv") and not file.filename.endswith(".xlsx")):
-        raise HTTPException(status_code=400, detail="Only CSV & XLSX files are allowed!")
+        raise HTTPException(status_code=400, detail="Only .csv & .xlsx files are allowed!")
 
     # Save the file under "uploads" folder
     with open(file_location, "wb") as buffer:
@@ -55,17 +53,27 @@ async def process_form(
         with open(file_location) as devices_list:
             lines = devices_list.readlines()
 
+        # Delete the uploaded file after extracting devices information from it
+        os.remove(file_location)
+
         # getting a dictionary contains the devices list in (IP-address:vendor) format
         try:
             devices = {line.split(",")[0].strip():line.split(",")[1].strip() for line in lines}
         except:
             raise HTTPException(status_code=500, detail="File Format Error --- Please be sure to write the format <ip-address>,<vendor> in the .csv file ---")
     else:
+        # Reading the Excel sheet, will return into {Columns:{Rows}} dictionaries
         pd_read = pd.read_excel(file_location, header=None).to_dict()
-        devices = {pd_read[0][i]: pd_read[1][i] for i in pd_read.keys()}
+
+        # Extracting device IP: Vendor from the Excel sheet Columns/Rows format
+        devices = {pd_read[0][i]:pd_read[1][i] for i in pd_read[0].keys()}
+
+        # Delete the uploaded file after extracting devices information from it
+        os.remove(file_location)
 
     global IP_list
     IP_list = list(devices.keys())
+
     # Searching the devices for the keyword(s)
     global data
     data = search_network(username,password,keyword1,keyword2,operator,case_sensitive,devices)
